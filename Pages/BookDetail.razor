@@ -1,0 +1,62 @@
+@page "/book/{ISBN}"
+@inject HttpClient Http
+
+<div class="max-w-full p-5">
+
+    @if (currentBook is not null)
+    {
+
+        <div
+            class="flex flex-col items-center bg-white border border-gray-200 rounded-lg shadow md:flex-row md:max-w-1xl hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700">
+            <img class="object-cover w-full rounded-t-lg h-96 md:h-auto md:w-48 md:rounded-none md:rounded-l-lg"
+                src="@currentBook.Cover" alt="">
+            <div class="flex flex-col justify-between p-4 leading-normal">
+                <h5 class="mb-2 text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+                    @currentBook.Title
+                </h5>
+                <div class="flex flex-row justify-between">
+
+                    <h1 class="mb-2 text-1xl font-thin tracking-tight text-gray-700 dark:text-white">
+                        @currentBook.Author.Name
+                    </h1>
+                    <p class="mb-3 font-normal text-gray-700 dark:text-gray-400">
+                        @currentBook.Genre
+                    </p>
+                    <p class="mb-3 font-thin text-gray-700 dark:text-gray-400">
+                        @currentBook.Year
+                    </p>
+                </div>
+                <p class="mb-3 font-normal text-gray-700 dark:text-gray-400">
+                    @currentBook.Synopsis
+                </p>
+                <h2 class="mb-2 text-lg font-semibold text-gray-700 dark:text-gray-400">Otros libros:</h2>
+                <ul class="max-w-md space-y-1 text-gray-500 list-disc list-inside dark:text-gray-400">
+                    @foreach (var book in currentBook.Author.OtherBooks)
+                    {
+                        <li>@book</li>
+                    }
+
+                </ul>
+            </div>
+        </div>
+
+    }
+</div>
+
+@code
+{
+    [Parameter]
+    public string? ISBN { get; set; }
+
+    private Book? currentBook;
+
+    protected override async Task OnInitializedAsync()
+    {
+        string filepath = "sample-data/books.json";
+        var jsonRoot = await Http.GetFromJsonAsync<Root>(filepath);
+        if (jsonRoot is not null)
+        {
+            currentBook = jsonRoot.Library.FirstOrDefault<BookWrapper>(x => x.Book.ISBN == ISBN)?.Book;
+        }
+    }
+}

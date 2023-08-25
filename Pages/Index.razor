@@ -1,9 +1,145 @@
 ﻿@page "/"
+@inject HttpClient Http
 
-<PageTitle>Index</PageTitle>
+<div class="mx-auto max-w-full p-5">
+  <!-- Select con filtro de géneros -->
+  <div class="flex flex-row mb-3">
+    <div class="basis-1/4"> 
+      <label for="genres" class="text-xl text-gray-900">Select a genre</label>
+    </div>
+    <div class="basis-3/4">
+      <select id="countries" @onchange="OnGenreSelect"
+        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+        <option value="all" selected>Choose a genre</option>
+        @foreach (var genre in genres)
+        {
+          <option value="@genre">@genre</option>
+        }
+      </select>
+    </div>
 
-<h1>Hello, world!</h1>
+  </div>
 
-Welcome to your new app.
+  @if (jsonRoot is null)
+  {
+    <Loading />
+  }
+  else
+  {
+    <div class="grid grid-cols-[repeat(auto-fill,minmax(230px,1fr))] gap-4">
+      @foreach (var book in matches)
+      {
+        <div class="max-w-sm bg-white border border-gray-200 rounded-lg shadow dark:bg-gray-800 dark:border-gray-700">
+          <a href="#">
+            <img class="rounded-t-lg aspect-[9/14] object-cover" src="@book.Cover" alt="" />
+          </a>
+          <div class="p-5">
+            <a href="#">
+              <h5 class="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+                @book.Title
+              </h5>
+            </a>
+            <p class="mb-3 font-normal text-gray-700 dark:text-gray-400">
+              @book.Synopsis
+            </p>
+            <a href="/book/@book.ISBN"
+              class="inline-flex items-center px-3 py-2 text-sm font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+              Read more
+              <svg class="w-3.5 h-3.5 ml-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none"
+                viewBox="0 0 14 10">
+                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M1 5h12m0 0L9 1m4 4L9 9" />
+              </svg>
+            </a>
+          </div>
+        </div>
 
-<SurveyPrompt Title="How is Blazor working for you?" />
+      }
+    </div>
+  }
+</div>
+
+
+@if (!string.IsNullOrEmpty(exception))
+{
+  <div id="alert-additional-content-2"
+    class="p-4 my-4 text-red-800 border border-red-300 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400 dark:border-red-800"
+    role="alert">
+    <div class="flex items-center">
+      <svg class="flex-shrink-0 w-4 h-4 mr-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor"
+        viewBox="0 0 20 20">
+        <path
+          d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z" />
+      </svg>
+      <span class="sr-only">Info</span>
+      <h3 class="text-lg font-medium">This is a danger alert</h3>
+    </div>
+    <div class="mt-2 mb-4 text-sm">
+      @exception
+    </div>
+    <div class="flex">
+      <button type="button"
+        class="text-white bg-red-800 hover:bg-red-900 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-xs px-3 py-1.5 mr-2 text-center inline-flex items-center dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-800">
+        <svg class="-ml-0.5 mr-2 h-3 w-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor"
+          viewBox="0 0 20 14">
+          <path
+            d="M10 0C4.612 0 0 5.336 0 7c0 1.742 3.546 7 10 7 6.454 0 10-5.258 10-7 0-1.664-4.612-7-10-7Zm0 10a3 3 0 1 1 0-6 3 3 0 0 1 0 6Z" />
+        </svg>
+        View more
+      </button>
+      <button type="button"
+        class="text-red-800 bg-transparent border border-red-800 hover:bg-red-900 hover:text-white focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-xs px-3 py-1.5 text-center dark:hover:bg-red-600 dark:border-red-600 dark:text-red-500 dark:hover:text-white dark:focus:ring-red-800"
+        data-dismiss-target="#alert-additional-content-2" aria-label="Close">
+        Dismiss
+      </button>
+    </div>
+  </div>
+}
+
+
+@code
+{
+  private Root? jsonRoot;
+  private List<Book>? books = new();
+  private List<Book>? matches = new();
+
+  private HashSet<string>? genres = new();
+  private string? exception;
+
+  protected override async Task OnInitializedAsync()
+  {
+    try
+    {
+      //string filepath = @"Data\books.json";
+      string filepath = "sample-data/books.json";
+      jsonRoot = await Http.GetFromJsonAsync<Root>(filepath);
+      if (jsonRoot is not null)
+      {
+        foreach (var wrapper in jsonRoot.Library)
+        {
+          books.Add(wrapper.Book);
+          genres.Add(wrapper.Book.Genre);
+        }
+
+        matches = books;
+      }
+      //var json = await Http.GetStringAsync(filepath);
+      //jsonRoot = JsonSerializer.Deserialize<Root>(json);
+    }
+    catch (Exception ex) { exception = ex.Message; }
+
+  }
+
+  private void OnGenreSelect(ChangeEventArgs e)
+  {
+    var filter = e.Value.ToString();
+    if(filter.Equals("all"))
+    {
+      matches = books;
+    }
+    else
+    {
+      matches = books.Where(x => x.Genre == filter).ToList<Book>(); 
+    }
+  }
+}

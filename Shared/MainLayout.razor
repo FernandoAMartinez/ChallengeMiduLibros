@@ -1,17 +1,10 @@
 ﻿@inherits LayoutComponentBase
-
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
-
-    <main>
-        <div class="top-row px-4">
-            <a href="https://docs.microsoft.com/aspnet/" target="_blank">About</a>
-        </div>
-
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
-</div>
+<main>
+    <nav class="p-5">
+        <a href="/" class="mb-4 text-1xl font-extrabold leading-none tracking-tight text-gray-900 md:text-2xl lg:text-3xl">Blazor <span class="underline underline-offset-3 decoration-8 decoration-blue-400 dark:decoration-blue-600">Midu Libros</span>
+        </a>
+    </nav>
+    <section class="mx-auto">
+        @Body
+    </section>
+</main>
